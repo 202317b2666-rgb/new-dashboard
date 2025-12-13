@@ -1,0 +1,185 @@
+country,iso_alpha,junk,hex
+Afghanistan,AFG,,#020F5E
+Albania,ALB,,#4C0033
+Algeria,DZA,,#3A7D7D
+Angola,AGO,,#155C5C
+Argentina,ARG,,#835D41
+Armenia,ARM,,#1353D0
+Australia,AUS,,#56021F
+Austria,AUT,,#790252
+Azerbaijan,AZE,,#020F5E
+Bahamas,BHS,,#5B4B8A
+Bahrain,BHR,,#000000
+Bangladesh,BGD,,#020F5E
+Barbados,BRB,,#020F5E
+Belarus,BLR,,#AF0171
+Belgium,BEL,,#AF0171
+Belize,BLZ,,#5B4B8A
+Benin,BEN,,#3A7D7D
+Bhutan,BTN,,#03012C
+Bolivia,BOL,,#D6C0B3
+Bosnia and Herzegovina,BIH,,#AF0171
+Botswana,BWA,,#092635
+Brazil,BRA,,#493628
+Brunei,BRN,,#020F5E
+Bulgaria,BGR,,#E80F88
+Burkina Faso,BFA,,#1B4242
+Burundi,BDI,,#5C8374
+Cambodia,KHM,,#577BC1
+Cameroon,CMR,,#3A7D7D
+Canada,CAN,,#371B58
+Central African Republic,CAF,,#155C5C
+Chad,TCD,,#9EC8B9
+Chile,CHL,,#493628
+China,CHN,,#577BC1
+Colombia,COL,,#D6C0B3
+Congo (Congo-Brazzaville),COG,,#092635
+Costa Rica,CRI,,#371B58
+Croatia,HRV,,#E80F88
+Cuba,CUB,,#5B4B8A
+Cyprus,CYP,,#1353D0
+Czechia,CZE,,#4C0033
+Democratic Republic of the Congo,COD,,#092635
+Denmark,DNK,,#4C0033
+Djibouti,DJI,,#9EC8B9
+Dominican Republic,DOM,,#4C3575
+Ecuador,ECU,,#493628
+Egypt,EGY,,#092635
+El Salvador,SLV,,#5B4B8A
+Equatorial Guinea,GNQ,,#5C8374
+Eritrea,ERI,,#1B4242
+Estonia,EST,,#790252
+Eswatini (Swaziland),SWZ,,#1B4242
+Ethiopia,ETH,,#092635
+Fiji,FJI,,#292890
+Finland,FIN,,#E80F88
+France,FRA,,#790252
+Gabon,GAB,,#1B4242
+Gambia,GMB,,#092635
+Georgia,GEO,,#7886C7
+Germany,DEU,,#E80F88
+Ghana,GHA,,#1B4242
+Greece,GRC,,#790252
+Grenada,GRD,,#7886C7
+Guatemala,GTM,,#5B4B8A
+Guinea,GIN,,#092635
+Guinea-Bissau,GNB,,#3A7D7D
+Guyana,GUY,,#AB886D
+Haiti,HTI,,#7858A6
+Honduras,HND,,#5B4B8A
+Hungary,HUN,,#AF0171
+Iceland,ISL,,#E80F88
+India,IND,,#1353D0
+Indonesia,IDN,,#292890
+Iran,IRN,,#577BC1
+Iraq,IRQ,,#7886C7
+Ireland,IRL,,#4C0033
+Israel,ISR,,#03012C
+Italy,ITA,,#E80F88
+Jamaica,JAM,,#371B58
+Japan,JPN,,#020F5E
+Jordan,JOR,,#1353D0
+Kazakhstan,KAZ,,#020F5E
+Kenya,KEN,,#9EC8B9
+Kiribati,KIR,,#1353D0
+Kuwait,KWT,,#1353D0
+Kyrgyzstan,KGZ,,#1353D0
+Laos,LAO,,#03012C
+Latvia,LVA,,#4C0033
+Lebanon,LBN,,#7886C7
+Lesotho,LSO,,#5C8374
+Liberia,LBR,,#5C8374
+Libya,LBY,,#1B4242
+Liechtenstein,LIE,,#AF0171
+Lithuania,LTU,,#E80F88
+Luxembourg,LUX,,#790252
+Madagascar,MDG,,#5C8374
+Malawi,MWI,,#5C8374
+Malaysia,MYS,,#020F5E
+Mali,MLI,,#9EC8B9
+Malta,MLT,,#000000
+Mauritania,MRT,,#1B4242
+Mexico,MEX,,#7858A6
+Moldova,MDA,,#E80F88
+Mongolia,MNG,,#292890
+Montenegro,MNE,,#790252
+Morocco,MAR,,#155C5C
+Mozambique,MOZ,,#155C5C
+Myanmar (Burma),MMR,,#7886C7
+Namibia,NAM,,#5C8374
+Nepal,NPL,,#7886C7
+Netherlands,NLD,,#790252
+New Zealand,NZL,,#56021F
+Nicaragua,NIC,,#371B58
+Niger,NER,,#155C5C
+Nigeria,NGA,,#5C8374
+North Korea,PRK,,#7886C7
+North Macedonia,MKD,,#AF0171
+Norway,NOR,,#790252
+Oman,OMN,,#1353D0
+Pakistan,PAK,,#7886C7
+Panama,PAN,,#5B4B8A
+Papua New Guinea,PNG,,#292890
+Paraguay,PRY,,#AB886D
+Peru,PER,,#AB886D
+Philippines,PHL,,#020F5E
+Poland,POL,,#790252
+Portugal,PRT,,#4C0033
+Qatar,QAT,,#1353D0
+Romania,ROU,,#790252
+Russia,RUS,,#03012C
+Rwanda,RWA,,#9EC8B9
+Saint Kitts and Nevis,KNA,,#7858A6
+Saint Lucia,LCA,,#4C3575
+Saint Vincent and the Grenadines,VCT,,#4C3575
+Sao Tome and Principe,STP,,#1B4242
+Saudi Arabia,SAU,,#292890
+Senegal,SEN,,#5C8374
+Serbia,SRB,,#4C0033
+Seychelles,SYC,,#5C8374
+Sierra Leone,SLE,,#1B4242
+Singapore,SGP,,#020F5E
+Slovakia,SVK,,#E80F88
+Slovenia,SVN,,#4C0033
+Solomon Islands,SLB,,#292890
+Somalia,SOM,,#5C8374
+South Africa,ZAF,,#9EC8B9
+South Korea,KOR,,#292890
+South Sudan,SSD,,#1B4242
+Spain,ESP,,#AF0171
+Sri Lanka,LKA,,#292890
+Sudan,SDN,,#5C8374
+Suriname,SUR,,#AB886D
+Sweden,SWE,,#AF0171
+Switzerland,CHE,,#AF0171
+Syria,SYR,,#577BC1
+Taiwan,TWN,,#292890
+Tajikistan,TJK,,#292890
+Tanzania,TZA,,#1B4242
+Thailand,THA,,#292890
+Timor-Leste,TLS,,#292890
+Togo,TGO,,#092635
+Tonga,TON,,#292890
+Trinidad and Tobago,TTO,,#7858A6
+Tunisia,TUN,,#9EC8B9
+Turkey,TUR,,#292890
+Turkmenistan,TKM,,#1353D0
+Tuvalu,TUV,,#292890
+Uganda,UGA,,#5C8374
+Ukraine,UKR,,#4C0033
+United Arab Emirates,ARE,,#577BC1
+United Kingdom,GBR,,#E80F88
+United States,USA,,#5B4B8A
+Uruguay,URY,,#D6C0B3
+Uzbekistan,UZB,,#577BC1
+Vanuatu,VUT,,#292890
+Venezuela,VEN,,#AB886D
+Vietnam,VNM,,#7886C7
+Yemen,YEM,,#7886C7
+Zambia,ZMB,,#9EC8B9
+Zimbabwe,ZWE,,#1B4242
+Western Sahara,ESH,,#9EC8B9
+Cote D'Ivoire,CIV,,#3A7D7D
+Kosovo,XKX,,#E80F88
+Puerto Rico,PRI,,#4C3575
+New Caledonia,NCL,,#292890
