@@ -1,120 +1,43 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 
-# -----------------------------
-# Page config
-# -----------------------------
-st.set_page_config(
-    page_title="🌍 Global Health Dashboard",
-    layout="wide"
-)
+# --- 1. Load your data ---
+# Replace with your actual CSV file
+DATA_FILE = "HEX.csv"
+data = pd.read_csv(DATA_FILE)
 
-# -----------------------------
-# Load data
-# -----------------------------
-df = pd.read_csv("final_with_socio_cleaned.csv")
+# Ensure the year column is int
+data['Year'] = data['Year'].astype(int)
 
-with open("countries.geo.json") as f:
-    geojson = json.load(f)
+# --- 2. Sidebar: Year selection ---
+year = st.sidebar.slider("Select Year", min_value=int(data['Year'].min()), 
+                         max_value=int(data['Year'].max()), value=int(data['Year'].max()))
 
-# Ensure correct dtypes
-df["Year"] = df["Year"].astype(int)
+# Filter data for selected year
+year_data = data[data['Year'] == year]
 
-# -----------------------------
-# Session state
-# -----------------------------
-if "selected_country" not in st.session_state:
-    st.session_state.selected_country = None
-
-# -----------------------------
-# Sidebar - Year slider
-# -----------------------------
-year = st.sidebar.slider(
-    "Select Year",
-    int(df["Year"].min()),
-    int(df["Year"].max()),
-    int(df["Year"].max())
-)
-
-year_df = df[df["Year"] == year]
-
-# -----------------------------
-# World Map
-# -----------------------------
+# --- 3. Create a Plotly map ---
 fig = px.choropleth(
-    year_df,
-    geojson=geojson,
-    locations="ISO3",
-    featureidkey="properties.ISO_A3",
-    color="HDI",
-    hover_name="Country",
+    year_data,
+    locations="ISO3",  # Column with country codes
+    color="HDI",       # Example metric
+    hover_name="Country",  
+    hover_data={"HDI": True, "GDP per Capita": True, "Gini Index": True,
+                "Life Expectancy": True, "Median Age": True, "COVID Deaths / mil": True,
+                "ISO3": False},  # Hide ISO3 in hover
     color_continuous_scale="Viridis",
-)
-
-fig.update_geos(
-    showcountries=True,
-    showcoastlines=False,
-    projection_type="natural earth"
+    projection="natural earth"
 )
 
 fig.update_layout(
-    margin=dict(l=0, r=0, t=0, b=0),
-    height=600
+    title=f"Global Health Dashboard - {year}",
+    margin={"r":0,"t":50,"l":0,"b":0}
 )
 
-# -----------------------------
-# Capture click
-# -----------------------------
-click = st.plotly_chart(
-    fig,
-    use_container_width=True,
-    key="map"
-)
+# --- 4. Streamlit page ---
+st.title("🌍 Global Health Dashboard")
+st.plotly_chart(fig, use_container_width=True)
 
-# Streamlit workaround: use selectbox fallback
-country_list = sorted(year_df["Country"].unique())
-selected = st.selectbox(
-    "Click not detected? Select country manually:",
-    [""] + country_list
-)
-
-if selected:
-    st.session_state.selected_country = selected
-
-# -----------------------------
-# Floating popup (CSS)
-# -----------------------------
-if st.session_state.selected_country:
-    row = year_df[year_df["Country"] == st.session_state.selected_country].iloc[0]
-
-    st.markdown(
-        f"""
-        <style>
-        .popup {{
-            position: fixed;
-            right: 30px;
-            top: 120px;
-            background: white;
-            padding: 20px;
-            width: 320px;
-            border-radius: 12px;
-            box-shadow: 0px 8px 30px rgba(0,0,0,0.25);
-            z-index: 9999;
-        }}
-        </style>
-
-        <div class="popup">
-            <h3>📊 {row['Country']}</h3>
-            <b>Year:</b> {year}<br>
-            <b>HDI:</b> {row['HDI']}<br>
-            <b>GDP per Capita:</b> {row['GDP_per_capita']}<br>
-            <b>Gini Index:</b> {row['Gini_Index']}<br>
-            <b>Life Expectancy:</b> {row['Life_Expectancy']}<br>
-            <b>Median Age:</b> {row['Median_Age_Est']}<br>
-            <b>COVID Deaths / mil:</b> {row['COVID_Deaths']}<br>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+# Optional: Show selected country details below map
+st.markdown("Click on a country to see details in hover popup!")
