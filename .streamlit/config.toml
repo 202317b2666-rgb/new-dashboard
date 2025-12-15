@@ -1,0 +1,10 @@
+# .streamlit/config.toml
+
+# Sets a clean, attractive font (Nunito) for the entire dashboard.
+[theme]
+font = "Nunito:https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap, sans-serif"
+
+# Ensure colors match the dark aesthetic
+textColor = "#FFFFFF" 
+backgroundColor = "#0E1117" 
+secondaryBackgroundColor = "#262730"
