@@ -1,0 +1,90 @@
+ISO3,GEOJSON_NAME
+# --- Critical Mismatches ---
+ECS,United Kingdom
+ECS,United Kingdom of Great Britain and Northern Ireland
+ASA,Russian
+USA,United States
+ECS,Turkey
+ARB,Saudi Arabia
+MNA,Pakistan
+LBY,Libya
+IRN,"Iran, Islamic Rep."
+EGY,"Egypt, Arab Rep."
+KOR,"Korea, Rep."
+PRK,"Korea, Dem. People's Rep."
+CZE,Czechia
+MKD,North Macedonia
+HKG,"Hong Kong SAR, China"
+MAC,"Macao SAR, China"
+TLS,Timor-Leste
+BRN,"Brunei Darussalam"
+COG,"Congo (Brazzaville)"
+COD,"Congo (Kinshasa)"
+
+# --- European Countries ---
+ECS,Sweden
+DNK,Norway
+CEB,Poland
+ECS,Spain
+ECA,Portugal
+ECS,Switzerland
+ECS,Slovenia
+TEC,Romania
+UKR,Ukraine
+MDA,Moldova
+ECS,Serbia
+
+# --- Americas/Caribbean Countries ---
+NAC,Panama
+LCN,Peru
+LCN,Venezuela
+LCN,Suriname
+NAC,Paraguay
+NAC,Uruguay
+NAC,"Trinidad and Tobago"
+GUY,Guyana
+NAC,"Puerto Rico"
+LCN,"French Guiana"
+
+# --- African/Middle Eastern Countries ---
+MEA,Tunisia
+MAR,Morocco
+MEA,Syria
+AFW,Senegal
+AFW,"Sierra Leone"
+AFW,Togo
+AFE,Zambia
+AFE,"South Sudan"
+AFE,Sudan
+AFW,Tanzania
+MEA,"Western Sahara"
+ECS,"West Bengal"
+AFE,"South Africa"
+FFF,Zimbabwe
+FFF,"United Republic of Tanzania"
+FFF,Uganda
+MNA,Yemen
+IRN,Iran
+LBY,Libya
+
+# --- Asia/Pacific Countries ---
+LAO,Laos
+EAP,Thailand
+EAP,Philippines
+EAP,Taiwan
+EAP,"Korea, Rep."
+EAP,"Solomon Islands"
+EAP,Vanuatu
+EAP,"Papua New Guinea"
+EAS,"Sri Lanka"
+EAP,Philippines
+EAP,"South korea"
+EAS,Laos
+EAP,Taiwan
+ECS,Tajikistan
+ECS,Kyrgyzstan
+
+# --- Specific Country Mappings ---
+UKR,Ukraine
+MDA,Moldova
+CZE,"Czech Republic"
