@@ -447,7 +447,7 @@ try:
         return {
             'fillColor': hex_color,
             'color': 'black', 
-            'weight': 0.5,
+            'weight': 0.3,
             'fillOpacity': 0.8
         }
 
