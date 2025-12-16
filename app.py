@@ -18,15 +18,11 @@ div.st-emotion-cache-16k74f6 > iframe {
     border: none !important;
 }
 
-/* 2. MAKES THE MAP HOVER BORDER LIGHT GRAY/SILVER (AS REQUESTED) */
-/* This targets the path elements used for the GeoJson borders */
+/* 2. MAKES THE HOVER BORDER SUBTLE DARK GRAY (AS REQUESTED) */
 .leaflet-interactive {
     outline: none !important; /* General selector to remove outline */
 }
-/* Apply light gray stroke on hover for a subtle 'lift' effect */
-.leaflet-container .leaflet-interactive.leaflet-clickable:hover {
-    stroke: #CCCCCC !important; 
-}
+/* This CSS is only for the initial rendering/non-hover. The hover effect is in Python. */
 </style>
 """
 
@@ -49,7 +45,7 @@ ALL_INDICATOR_DETAILS = collections.OrderedDict([
     ("MEDIAN_AGE_EST", {"display": "Median Age", "unit": "Yrs", "precision": 1}),
     ("TOTAL_POPULATION", {"display": "Total Population", "unit": "M", "precision": 1}),
     ("POPULATION_DENSITY", {"display": "Population Density", "unit": "ppl/km²", "precision": 0}),
-    ("PM25", {"display": "PM2.5 (Air Pollution)", "unit": "µg/m³", "precision": 2}),
+    ("PM25", {"display": "PM25 (Air Pollution)", "unit": "µg/m³", "precision": 2}),
     ("HEALTH_INSURANCE", {"display": "Health Insurance", "unit": "%", "precision": 1}),
     ("BIRTHS", {"display": "Annual Births", "unit": "K", "precision": 1}),
     ("DEATHS", {"display": "Annual Deaths", "unit": "K", "precision": 1}),
@@ -93,9 +89,7 @@ def select_box_callback(country_name_to_iso):
 
 @st.cache_data
 def load_data():
-    """Loads data, GeoJSON, the Mismatch Map, and the Hex Colors, and applies filtering/cleaning.
-    *** CRITICAL: This section is updated with final country mappings. ***
-    """
+    """Loads data, GeoJSON, the Mismatch Map, and the Hex Colors, and applies filtering/cleaning."""
     
     EXCLUDE_TERMS = [
         "AFRICA", "ASIA", "LATIN AMERICA", "CARIBBEAN", "MIDDLE EAST",
@@ -181,7 +175,42 @@ def load_data():
     df.drop(columns=['ORIGINAL_COUNTRY'], inplace=True) 
 
     # 2. mismatch_map: Maps GeoJSON country name (clicked on map) to a proxy ISO3 code for data lookup.
-    mismatch_map = dict(zip(mismatch_df["GEOJSON_NAME"], mismatch_df["ISO3"]))
+    # *** FINAL CORRECTED COUNTRY_NAME_MISMATCH_MAP LOGIC ***
+    mismatch_map = {
+        # --- Critical Mismatches ---
+        "United Kingdom": "ECS", "United Kingdom of Great Britain and Northern Ireland": "ECS",
+        "Russian Federation": "ECS", "United States": "USA", "Turkey": "ECS", "Saudi Arabia": "ARB",
+        "Pakistan": "MNA", "Libya": "LBY", "Iran, Islamic Rep.": "IRN", "Egypt, Arab Rep.": "EGY",
+        "Korea, Rep.": "KOR", "Korea, Dem. People's Rep.": "PRK", "Czechia": "CZE", "North Macedonia": "MKD",
+        "Hong Kong SAR, China": "HKG", "Macao SAR, China": "MAC", "Timor-Leste": "TLS", "Brunei Darussalam": "BRN",
+        "Congo (Brazzaville)": "COG", "Congo (Kinshasa)": "COD",
+
+        # --- European Countries ---
+        "Sweden": "ECS", "Norway": "DNK", "Poland": "CEB", "Spain": "ECS", "Portugal": "ECA",
+        "Switzerland": "ECS", "Slovenia": "ECS", "Romania": "TEC", "Ukraine": "UKR", "Moldova": "MDA", "Serbia": "ECS",
+        "Czech Republic": "CZE",
+
+        # --- Americas/Caribbean Countries ---
+        "Panama": "NAC", "Peru": "LCN", "Venezuela": "LCN", "Suriname": "LCN", "Paraguay": "NAC",
+        "Uruguay": "NAC", "Trinidad and Tobago": "NAC", "Guyana": "GUY", "Puerto Rico": "NAC",
+        "French Guiana": "LCN",
+
+        # --- African/Middle Eastern Countries ---
+        "Tunisia": "MEA", "Morocco": "MAR", "Syria": "MEA", "Senegal": "AFW", "Sierra Leone": "AFW",
+        "Togo": "AFW", "Zambia": "AFE", "South Sudan": "AFE", "Sudan": "AFE", "Tanzania": "AFW",
+        "Western Sahara": "MEA", "West Bengal": "ECS", "South Africa": "AFE", "Zimbabwe": "FFF",
+        "United Republic of Tanzania": "FFF", "Uganda": "FFF", "Yemen": "MNA", "Iran": "IRN",
+        
+        # --- Asia/Pacific Countries (including new additions) ---
+        "Laos": "LAO", "Thailand": "EAP", "Philippines": "EAP", "Taiwan": "EAP", 
+        "Solomon Islands": "EAP", "Vanuatu": "EAP", "Papua New Guinea": "EAP", "Sri Lanka": "EAS",
+        "South korea": "EAP", 
+        "Tajikistan": "ECS", # Central Asia proxy
+        "Kyrgyzstan": "ECS", # Central Asia proxy
+        
+        # --- Central Asia Proxies ---
+        "Turkmenistan": "ECS", "Uzbekistan": "ECS",
+    }
     
     try:
         response = requests.get(WORLD_GEOJSON_URL)
@@ -220,12 +249,12 @@ def format_value(value, units="", precision=3, is_currency=False):
 
 
 def create_data_narrative(row, year):
-    """Creates a comprehensive, human-readable narrative text block with detailed explanations."""
+    """Creates a comprehensive, human-readable narrative text block."""
     if row.empty or row['COUNTRY'] is None:
         return "No comprehensive data narrative available."
 
     country_name = row['COUNTRY']
-    text = f"### 📊 Data Snapshot: {country_name} ({year})\n\n"
+    text = f"### 📊 Full Data Details: {country_name} ({year})\n\n"
     text += "This section provides a detailed breakdown of all available indicators for the selected country and year, with explanations for easy understanding.\n\n"
     
     sections = collections.OrderedDict([
@@ -255,7 +284,7 @@ def create_data_narrative(row, year):
 
             context = ""
             unit_desc = f" (Unit: {detail.get('unit', 'No Unit')})"
-            if indicator == "HDI": context = "The **Human Development Index (HDI)** measures a country's average achievement in three basic dimensions of human development: a long and healthy life, knowledge, and a decent standard of living." + unit_desc
+            if indicator == "HDI": context = "The **Human Development Index (HDI)** measures average achievement in three basic dimensions of human development: a long and healthy life, knowledge, and a decent standard of living." + unit_desc
             elif indicator == "GDP_PER_CAPITA": context = "The **Gross Domestic Product (GDP) per Capita** is the national economic output divided by the total population, indicating average economic prosperity." + unit_desc
             elif indicator == "GINI_INDEX": context = "The **Gini Index** measures income inequality, where 0% represents perfect equality and 100% represents perfect inequality." + unit_desc
             elif indicator == "TOTAL_POPULATION": context = "The total number of people living in the country (reported in Millions)." + unit_desc
@@ -331,8 +360,7 @@ def draw_country_details(df, selected_id, year):
     
     st.markdown("---")
 
-    # --- 2. Historical Trends (Line Chart & Interactive Year Selector) ---
-    # Removed "Interactive Chart" from the title
+    # --- 2. Historical Trends (Line Chart - Title cleaned) ---
     st.markdown("#### Historical Trends")
     
     col_chart_select, col_chart_options = st.columns([1, 4])
@@ -447,8 +475,8 @@ try:
         return {
             'fillColor': hex_color,
             'color': 'black', 
-            'weight': 0.3,
-            'fillOpacity': 0.8
+            'weight': 0.5,
+            'fillOpacity': 0.6
         }
 
     if world_geojson:
@@ -456,11 +484,11 @@ try:
             world_geojson,
             name='Color and Click Layer',
             style_function=style_function, 
-            # Hover highlight set to a dark color to contrast with the light CSS border
+            # --- FINAL DARK SHADOW HIGHLIGHT FOR "LIFT" EFFECT ---
             highlight_function=lambda x: {
-                'weight': 3,          
-                'color': "#00000062",    
-                'fillOpacity': 0.9
+                'color': '#444444',     # Dark gray border (shadow)
+                'weight': 4,            # Increased border thickness
+                'fillOpacity': 0.5      # Slightly reduced fill to look shaded
             }, 
             tooltip=folium.features.GeoJsonTooltip(fields=['name'], aliases=['Country Name:']),
         ).add_to(m)
@@ -475,7 +503,7 @@ try:
         returned_objects=["last_active_feature", "last_clicked"] 
     )
 
-    # --- MAP CLICK CAPTURE LOGIC ---
+    # --- MAP CLICK CAPTURE LOGIC (Unchanged) ---
     clicked_id = None
     if map_data and map_data.get("last_active_feature") and 'id' in map_data["last_active_feature"]:
         iso_from_feature = str(map_data["last_active_feature"]["id"]).strip().upper()
@@ -620,7 +648,7 @@ try:
 
 
             # --- 7.2: Latest Year Comparison (Magnitude Comparison with Gradient) ---
-            st.markdown("### Latest Year Comparison")
+            st.markdown("### Latest Year Comparison (Interactive Bar Charts)")
 
             if not latest_comparison_df.empty:
                 cols_bar = st.columns(2)
@@ -662,13 +690,22 @@ try:
         st.info("Select 2 or more countries above to view comparative historical trends.")
 
     # -----------------------------
-    # 8. Relocated Comprehensive Snapshot (Final Section)
+    # 8. Relocated Comprehensive Snapshot (Using Popover)
     # -----------------------------
     if FULL_SNAPSHOT_CONTENT:
         st.markdown("---")
-        # Removed "(For New Users)" from the expander title
-        with st.expander("🔬 View Full Comprehensive Data Snapshot"):
-            st.markdown(FULL_SNAPSHOT_CONTENT, unsafe_allow_html=True)
+        
+        col_popover, col_spacer = st.columns([1, 4])
+        
+        with col_popover:
+            # Replaced expander with the cleaner st.popover
+            with st.popover(
+                "🔬 View Full Comprehensive Data Snapshot", 
+                icon=":material/analytics:", 
+                type="secondary"
+            ):
+                st.markdown(FULL_SNAPSHOT_CONTENT, unsafe_allow_html=True)
+                
         st.markdown("---")
 
 except Exception as e:
@@ -677,4 +714,4 @@ except Exception as e:
     st.code(f"Error Type: {type(e).__name__}", language='python')
     st.code(f"Error Message: {e}", language='python')
     st.code(traceback.format_exc(), language='python')
-    st.warning("Ensure all data files (`.csv`) are present and correctly formatted.")
+    st.warning("Ensure all data files (`.csv`) and the `requirements.txt` file are present.")
