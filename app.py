@@ -460,7 +460,7 @@ try:
             highlight_function=lambda x: {
                 'weight': 2,          
                 'color': "#00000062",    
-                'fillOpacity': 0.9
+                'fillOpacity': 0.4
             }, 
             tooltip=folium.features.GeoJsonTooltip(fields=['name'], aliases=['Country Name:']),
         ).add_to(m)
