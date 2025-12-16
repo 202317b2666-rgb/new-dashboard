@@ -459,7 +459,7 @@ try:
             # Hover highlight set to a dark color to contrast with the light CSS border
             highlight_function=lambda x: {
                 'weight': 2,          
-                'color': "#3E3838",    
+                'color': "#00000062",    
                 'fillOpacity': 1.0
             }, 
             tooltip=folium.features.GeoJsonTooltip(fields=['name'], aliases=['Country Name:']),
