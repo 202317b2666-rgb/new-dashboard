@@ -458,7 +458,7 @@ try:
             style_function=style_function, 
             # Hover highlight set to a dark color to contrast with the light CSS border
             highlight_function=lambda x: {
-                'weight': 5,          
+                'weight': 3,          
                 'color': "#00000062",    
                 'fillOpacity': 0.6
             }, 
