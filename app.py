@@ -448,7 +448,7 @@ try:
             'fillColor': hex_color,
             'color': 'black', 
             'weight': 0.5,
-            'fillOpacity': 0.6
+            'fillOpacity': 0.8
         }
 
     if world_geojson:
@@ -620,7 +620,7 @@ try:
 
 
             # --- 7.2: Latest Year Comparison (Magnitude Comparison with Gradient) ---
-            st.markdown("### Latest Year Comparison (Interactive Bar Charts)")
+            st.markdown("### Latest Year Comparison")
 
             if not latest_comparison_df.empty:
                 cols_bar = st.columns(2)
