@@ -13,12 +13,19 @@ import reverse_geocode
 CUSTOM_CSS = """
 <style>
 /* 1. HIDES THE STREAMLIT BOUNDARY BOX AROUND THE FOLIUM MAP */
+/* This targets the iframe Streamlit uses to display the map */
 div.st-emotion-cache-16k74f6 > iframe {
     border: none !important;
 }
-/* 2. Map hover effect: Only used for non-popup elements */
+
+/* 2. MAKES THE MAP HOVER BORDER LIGHT GRAY/SILVER (AS REQUESTED) */
+/* This targets the path elements used for the GeoJson borders */
 .leaflet-interactive {
-    outline: none !important; 
+    outline: none !important; /* General selector to remove outline */
+}
+/* Apply light gray stroke on hover for a subtle 'lift' effect */
+.leaflet-container .leaflet-interactive.leaflet-clickable:hover {
+    stroke: #CCCCCC !important; 
 }
 </style>
 """
@@ -42,7 +49,7 @@ ALL_INDICATOR_DETAILS = collections.OrderedDict([
     ("MEDIAN_AGE_EST", {"display": "Median Age", "unit": "Yrs", "precision": 1}),
     ("TOTAL_POPULATION", {"display": "Total Population", "unit": "M", "precision": 1}),
     ("POPULATION_DENSITY", {"display": "Population Density", "unit": "ppl/km²", "precision": 0}),
-    ("PM25", {"display": "PM25 (Air Pollution)", "unit": "µg/m³", "precision": 2}),
+    ("PM25", {"display": "PM2.5 (Air Pollution)", "unit": "µg/m³", "precision": 2}),
     ("HEALTH_INSURANCE", {"display": "Health Insurance", "unit": "%", "precision": 1}),
     ("BIRTHS", {"display": "Annual Births", "unit": "K", "precision": 1}),
     ("DEATHS", {"display": "Annual Deaths", "unit": "K", "precision": 1}),
@@ -58,7 +65,6 @@ CHART_INDICATORS = {
 }
 # KPI color is set to white/ivory for contrast against black
 KPI_VALUE_COLOR = "#FFFFF0" 
-KPI_NAME_COLOR = "#EEEEEE"
 
 # -----------------------------
 # 1. Page Config
@@ -85,76 +91,11 @@ def select_box_callback(country_name_to_iso):
         st.session_state.selected_id = None
 
 
-def format_value(value, units="", precision=3, is_currency=False):
-    """Helper function to format values safely with HTML for popups/KPIs."""
-    if pd.isna(value) or value is None:
-        return "<span style='color: #FF6347;'>**Data Not Available**</span>"
-    
-    if is_currency:
-        prefix = '$'
-        if abs(value) >= 1000:
-            value_str = f"{int(value):,}"
-        else:
-            value_str = f"{value:.{precision}f}"
-    else:
-        prefix = ''
-        if value >= 1000 and not (units == 'Yrs' or units == '%'):
-            value_str = f"{int(value):,}"
-        else:
-            value_str = f"{value:.{precision}f}"
-    
-    # KPI value color HTML tag
-    return f"<span style='color: {KPI_VALUE_COLOR};'>{prefix}{value_str}</span> {units}"
-
-
-def create_data_narrative_for_popup(row, year):
-    """
-    Creates a simplified, HTML-formatted string suitable for a Folium Popup.
-    This content is displayed when a country on the map is clicked.
-    """
-    if row.empty or row['COUNTRY'] is None:
-        return "No comprehensive data narrative available."
-
-    country_name = row['COUNTRY']
-    html_content = f"<div style='font-family: sans-serif; max-width: 250px; color: #2C3E50;'>"
-    html_content += f"<h4 style='margin-bottom: 5px;'>{country_name} ({year})</h4>"
-    html_content += f"<p style='font-size: 10px; margin-top: 0; color: #555;'>*Clicking a country here displays its full data snapshot.*</p>"
-    html_content += "<ul>"
-    
-    # Iterate through a subset of key indicators for the quick popup view
-    POPUP_INDICATORS = ["HDI", "LIFE_EXPECTANCY", "GDP_PER_CAPITA", "TOTAL_POPULATION", "GINI_INDEX"]
-
-    for indicator_key in POPUP_INDICATORS:
-        details = ALL_INDICATOR_DETAILS.get(indicator_key, {})
-        display_name = details.get("display", indicator_key.replace('_', ' ').title())
-        
-        if indicator_key == "MEDIAN_AGE_EST":
-             value = row.get('MEDIAN_AGE_EST', row.get('MEDIAN_AGE_MID', np.nan))
-        else:
-             value = row.get(indicator_key, np.nan)
-
-        formatted = format_value(
-            value,
-            units=details.get("unit", ""),
-            precision=details.get("precision", 3),
-            is_currency=details.get("currency", False)
-        ).replace(KPI_VALUE_COLOR, "#000000") # Use black text for the light-themed popup
-
-        # Use <li> tags for a clean list format
-        html_content += f"<li style='font-size: 14px;'><b>{display_name}:</b> {formatted}</li>"
-
-    html_content += "</ul>"
-    
-    # Button-like link to view the full details in the Streamlit area (optional but helpful)
-    html_content += f"<p style='margin-top: 10px; text-align: center;'><a href='#' onclick='window.alert(\"Select this country in the dropdown menu to see full charts and KPIs below.\")'>View Full Dashboard Details</a></p>"
-
-    html_content += "</div>"
-    return html_content.replace('</span>', '</span>').replace('None', 'N/A')
-
-
 @st.cache_data
 def load_data():
-    """Loads data, pre-calculates map popups, and applies filtering/cleaning."""
+    """Loads data, GeoJSON, the Mismatch Map, and the Hex Colors, and applies filtering/cleaning.
+    *** CRITICAL: This section is updated with final country mappings. ***
+    """
     
     EXCLUDE_TERMS = [
         "AFRICA", "ASIA", "LATIN AMERICA", "CARIBBEAN", "MIDDLE EAST",
@@ -173,6 +114,7 @@ def load_data():
         "FAROE ISLANDS", "ARUBA", "AMERICAN SAMOA"
     ]
     
+    # 1. RENAME_ISO_TO_COUNTRY: Used to rename ISO codes in the data to human-readable proxy names
     RENAME_ISO_TO_COUNTRY = {
         "GRL": "Greenland", "EAS": "Asia (Russia Data Proxy)", "ARB": "Arab World (Saudi Arabia Data Proxy)",               
         "EGY": "Egypt, Arab Rep. (Norway Data Proxy)", "MNA": "Middle East/N. Africa (Pakistan Data Proxy)",        
@@ -180,10 +122,12 @@ def load_data():
         "AFW": "Africa W&C (Tanzania, Togo, SL Proxy)", "MEA": "Middle East/N. Africa/Pakistan (Syria, W. Sahara, Tunisia Proxy)", 
         "TEC": "Europe & C. Asia (IDA/IBRD) (Romania Proxy)", "CEB": "Central European & Baltic (Poland Proxy)",           
         "ECA": "Europe & C. Asia (excl. High Income) (Portugal Proxy)", "NAC": "North America (Uruguay, Paraguay Proxy)",            
+        # Existing specific ISO renames
         "GBR": "United Kingdom", "PAK": "Pakistan", "KOR": "Korea, Rep.", "PRK": "Korea, Dem. People's Rep.",
         "IRN": "Iran, Islamic Rep.", "MAC": "Macao SAR, China", "HKG": "Hong Kong SAR, China",
         "COG": "Congo, Rep.", "CPV": "Cabo Verde", "KGZ": "Kyrgyz Republic",
         "LAO": "Lao PDR", "FSM": "Micronesia, Fed. Sts.",
+        # --- NEW PROXY: FFF ---
         "FFF": "Africa Central (New Proxy)",
     }
     
@@ -236,18 +180,9 @@ def load_data():
     df.loc[df['COUNTRY'] == "Americas", 'COUNTRY'] = "Americas (USA Data Proxy)"
     df.drop(columns=['ORIGINAL_COUNTRY'], inplace=True) 
 
-    mismatch_map_df = dict(zip(mismatch_df["GEOJSON_NAME"], mismatch_df["ISO3"]))
+    # 2. mismatch_map: Maps GeoJSON country name (clicked on map) to a proxy ISO3 code for data lookup.
+    mismatch_map = dict(zip(mismatch_df["GEOJSON_NAME"], mismatch_df["ISO3"]))
     
-    # --- Pre-calculate popover HTML for all countries and years ---
-    popup_data = {}
-    for iso in df['ISO3'].unique():
-        country_df = df[df['ISO3'] == iso]
-        popup_data[iso] = {}
-        for year in country_df['YEAR'].unique():
-            row = country_df[country_df['YEAR'] == year].iloc[0]
-            popup_html = create_data_narrative_for_popup(row, year)
-            popup_data[iso][year] = popup_html
-
     try:
         response = requests.get(WORLD_GEOJSON_URL)
         world_geojson = response.json()
@@ -255,7 +190,90 @@ def load_data():
         st.warning(f"Failed to load world GeoJSON for map coloring: {e}")
         world_geojson = None
     
-    return df, world_geojson, mismatch_map_df, iso_to_hex, popup_data
+    return df, world_geojson, mismatch_map, iso_to_hex
+
+
+# -----------------------------
+# 3. DETAILED ANALYSIS FUNCTIONS
+# -----------------------------
+
+def format_value(value, units="", precision=3, is_currency=False):
+    """Helper function to format values safely, with explicit missing data message and KPI color."""
+    if pd.isna(value) or value is None:
+        return "<span style='color: #FF6347;'>**Data Not Available**</span>"
+    
+    if is_currency:
+        prefix = '$'
+        if abs(value) >= 1000:
+            value_str = f"{int(value):,}"
+        else:
+            value_str = f"{value:.{precision}f}"
+    else:
+        prefix = ''
+        if value >= 1000 and not (units == 'Yrs' or units == '%'):
+            value_str = f"{int(value):,}"
+        else:
+            value_str = f"{value:.{precision}f}"
+    
+    # KPI color is applied here
+    return f"<span style='color: {KPI_VALUE_COLOR};'>{prefix}{value_str}</span> {units}"
+
+
+def create_data_narrative(row, year):
+    """Creates a comprehensive, human-readable narrative text block with detailed explanations."""
+    if row.empty or row['COUNTRY'] is None:
+        return "No comprehensive data narrative available."
+
+    country_name = row['COUNTRY']
+    text = f"### 📊 Data Snapshot: {country_name} ({year})\n\n"
+    text += "This section provides a detailed breakdown of all available indicators for the selected country and year, with explanations for easy understanding.\n\n"
+    
+    sections = collections.OrderedDict([
+        ("Development & Economic Stability", ["HDI", "GDP_PER_CAPITA", "GINI_INDEX"]),
+        ("Population Structure & Demographics", ["TOTAL_POPULATION", "MEDIAN_AGE_EST", "POPULATION_DENSITY", "MALE_POPULATION", "FEMALE_POPULATION"]),
+        ("Health Outcomes & Environmental Risk", ["LIFE_EXPECTANCY", "HEALTH_INSURANCE", "PM25"]),
+        ("Vital Statistics & Pandemic Impact", ["BIRTHS", "DEATHS", "COVID_DEATHS", "COVID_CASES"]),
+    ])
+    
+    for section_title, indicators in sections.items():
+        text += f"#### {section_title}\n"
+        for indicator in indicators:
+            detail = ALL_INDICATOR_DETAILS.get(indicator, {})
+            display_name = detail.get("display", indicator.replace('_', ' ').title())
+            
+            if indicator == "MEDIAN_AGE_EST":
+                 value = row.get('MEDIAN_AGE_EST', row.get('MEDIAN_AGE_MID', np.nan))
+            else:
+                 value = row.get(indicator, np.nan)
+
+            formatted = format_value(
+                value, 
+                units=detail.get("unit", ""), 
+                precision=detail.get("precision", 3), 
+                is_currency=detail.get("currency", False)
+            ).replace(f"</span> {detail.get('unit', '')}", f"</span>")
+
+            context = ""
+            unit_desc = f" (Unit: {detail.get('unit', 'No Unit')})"
+            if indicator == "HDI": context = "The **Human Development Index (HDI)** measures a country's average achievement in three basic dimensions of human development: a long and healthy life, knowledge, and a decent standard of living." + unit_desc
+            elif indicator == "GDP_PER_CAPITA": context = "The **Gross Domestic Product (GDP) per Capita** is the national economic output divided by the total population, indicating average economic prosperity." + unit_desc
+            elif indicator == "GINI_INDEX": context = "The **Gini Index** measures income inequality, where 0% represents perfect equality and 100% represents perfect inequality." + unit_desc
+            elif indicator == "TOTAL_POPULATION": context = "The total number of people living in the country (reported in Millions)." + unit_desc
+            elif indicator == "POPULATION_DENSITY": context = "The average number of people per square kilometer, showing how crowded the country is." + unit_desc
+            elif indicator == "MEDIAN_AGE_EST": context = "The age that divides the population into two halves. A lower median age suggests a younger population." + unit_desc
+            elif indicator == "LIFE_EXPECTANCY": context = "The average number of years a person is expected to live based on current death rates." + unit_desc
+            elif indicator == "HEALTH_INSURANCE": context = "The percentage of the total population covered by some form of health insurance." + unit_desc
+            elif indicator == "PM25": context = "The concentration of fine particulate matter in the air, a key indicator of environmental health risk." + unit_desc
+            elif indicator == "BIRTHS": context = "The total number of births during the year (reported in thousands, K)." + unit_desc
+            elif indicator == "DEATHS": context = "The total number of deaths during the year (reported in thousands, K)." + unit_desc
+            elif indicator == "COVID_DEATHS": context = "The cumulative total of COVID-19 deaths per million people up to this year." + unit_desc
+            elif indicator == "COVID_CASES": context = "The cumulative total of confirmed COVID-19 cases per million people up to this year." + unit_desc
+            
+            
+            text += f"* **{display_name}:** {formatted} {detail.get('unit', '')}\n  > *Explanation:* {context}\n"
+        text += "\n"
+    
+    return text.replace("K K", "K").replace("M M", "M")
 
 
 def draw_country_details(df, selected_id, year):
@@ -308,12 +326,13 @@ def draw_country_details(df, selected_id, year):
         )
         
         with col:
-            st.markdown(f"<p style='font-size: 14px; font-weight: bold; margin-bottom: 0; color: {KPI_NAME_COLOR};'>{details['display']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-size: 14px; font-weight: bold; margin-bottom: 0;'>{details['display']}</p>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-size: 18px;'>{formatted_value_str}</p>", unsafe_allow_html=True)
     
     st.markdown("---")
 
-    # --- 2. Historical Trends (Line Chart - Title cleaned) ---
+    # --- 2. Historical Trends (Line Chart & Interactive Year Selector) ---
+    # Removed "Interactive Chart" from the title
     st.markdown("#### Historical Trends")
     
     col_chart_select, col_chart_options = st.columns([1, 4])
@@ -365,8 +384,10 @@ def draw_country_details(df, selected_id, year):
 # 4. MAIN APPLICATION EXECUTION
 # -----------------------------
 
+FULL_SNAPSHOT_CONTENT = None 
+
 try:
-    df, world_geojson, mismatch_map, iso_to_hex, popup_data = load_data() 
+    df, world_geojson, mismatch_map, iso_to_hex = load_data() 
     years = sorted(df["YEAR"].unique())
 
     country_list = sorted(df["COUNTRY"].unique())
@@ -406,13 +427,15 @@ try:
             current_id = country_name_to_iso.get(selected_country_name_fallback, selected_country_name_fallback)
             st.session_state.selected_id = current_id
     
-    st.markdown("---")
-    st.markdown("### Interactive Map View")
-    st.caption("Click any country on the map to view its quick data snapshot. Use the dropdown above to select a country and view detailed charts below.")
+    if st.session_state.selected_id:
+        country_df_check = df[(df["ISO3"] == st.session_state.selected_id) | (df["COUNTRY"] == st.session_state.selected_id)]
+        latest_row_check = country_df_check[country_df_check["YEAR"] == year]
+        if not latest_row_check.empty:
+            FULL_SNAPSHOT_CONTENT = create_data_narrative(latest_row_check.iloc[0], year)
 
 
     # ----------------------------------------------------
-    # 2. Render Folium Map with Popups on Click
+    # 2. Render Folium Map & Capture Click 
     # ----------------------------------------------------
 
     m = folium.Map(location=[10, 0], zoom_start=2, tiles="OpenStreetMap", control_scale=True) 
@@ -429,48 +452,21 @@ try:
         }
 
     if world_geojson:
-        # We iterate over individual features to attach dynamic popups
-        for feature in world_geojson['features']:
-            country_iso = feature['id']
-            country_name = feature['properties'].get('name')
-            
-            # 1. Determine the ISO/Proxy code for data lookup
-            data_iso = mismatch_map.get(country_name, country_iso)
-            
-            # 2. Retrieve the popup HTML for the selected year
-            current_year_popups = popup_data.get(data_iso) or {}
-            
-            popup_html = current_year_popups.get(year)
-            if not popup_html:
-                 available_years = sorted(current_year_popups.keys())
-                 if available_years:
-                     # Find nearest available year (simple approximation)
-                     closest_year = min(available_years, key=lambda y: abs(y - year))
-                     popup_html = current_year_popups.get(closest_year) or f"No detailed data for {country_name} in or near {year}."
-                 else:
-                     popup_html = f"No detailed data available for {country_name}."
+        folium.GeoJson(
+            world_geojson,
+            name='Color and Click Layer',
+            style_function=style_function, 
+            # Hover highlight set to a dark color to contrast with the light CSS border
+            highlight_function=lambda x: {
+                'weight': 5,          
+                'color': "#00000062",    
+                'fillOpacity': 0.6
+            }, 
+            tooltip=folium.features.GeoJsonTooltip(fields=['name'], aliases=['Country Name:']),
+        ).add_to(m)
 
-            # 3. Create a Folium Popup object (opens on click)
-            # The popup width is constrained to look neat
-            if popup_html:
-                 popup = folium.Popup(popup_html, max_width=300, min_width=250)
-                 
-                 # 4. Create a GeoJson object for this single feature with styles/popup
-                 folium.GeoJson(
-                     feature,
-                     name=country_name,
-                     style_function=lambda x: style_function(feature),
-                     # FINAL DARK SHADOW HIGHLIGHT FOR "LIFT" EFFECT
-                     highlight_function=lambda x: {
-                         'color': '#444444',    
-                         'weight': 4,          
-                         'fillOpacity': 0.5  
-                     }, 
-                     tooltip=folium.features.GeoJsonTooltip(fields=['name'], aliases=['Country:']),
-                     popup=popup # Attach the popup here (opens on click)
-                 ).add_to(m)
 
-    st_folium(
+    map_data = st_folium(
         m, 
         height=500, 
         width='100%', 
@@ -479,11 +475,8 @@ try:
         returned_objects=["last_active_feature", "last_clicked"] 
     )
 
-    # --- Click capture logic remains for the Streamlit KPI/Chart section ---
-    # The Folium map handles its own popups now. The logic here still updates the main selection.
+    # --- MAP CLICK CAPTURE LOGIC ---
     clicked_id = None
-    map_data = st.session_state["folium_map_iso_capture"] 
-
     if map_data and map_data.get("last_active_feature") and 'id' in map_data["last_active_feature"]:
         iso_from_feature = str(map_data["last_active_feature"]["id"]).strip().upper()
         country_name_from_map = map_data["last_active_feature"]["properties"].get("name")
@@ -493,21 +486,36 @@ try:
         elif iso_from_feature in df['ISO3'].values:
             clicked_id = iso_from_feature
             
+    if clicked_id is None and map_data and map_data.get("last_clicked"):
+        lat = map_data["last_clicked"]["lat"]
+        lon = map_data["last_clicked"]["lng"]
+        coordinates = [(lat, lon)]
+        try:
+            results = reverse_geocode.search(coordinates)
+            country_name_from_click = results[0]['country']
+            
+            if country_name_from_click in mismatch_map:
+                clicked_id = mismatch_map[country_name_from_click]
+            else:
+                clicked_row = df[df["COUNTRY"].str.contains(country_name_from_click, case=False, na=False)]
+                if not clicked_row.empty: clicked_id = clicked_row.iloc[0]["ISO3"] if clicked_row.iloc[0]["ISO3"] else clicked_row.iloc[0]["COUNTRY"]
+        except Exception: pass 
+        
     if clicked_id:
         st.session_state.selected_id = clicked_id
-        # Force the selectbox to update to the clicked country name
-        country_name_for_select = df[(df["ISO3"] == clicked_id) | (df["COUNTRY"] == clicked_id)].iloc[0]["COUNTRY"]
-        st.session_state.country_select_box = country_name_for_select
-        st.rerun() # Rerun to update the selection and charts below
+        country_df_check = df[(df["ISO3"] == clicked_id) | (df["COUNTRY"] == clicked_id)]
+        latest_row_check = country_df_check[country_df_check["YEAR"] == year]
+        if not latest_row_check.empty:
+            FULL_SNAPSHOT_CONTENT = create_data_narrative(latest_row_check.iloc[0], year)
 
 
     # -----------------------------
-    # 6. Country Details Section (Charts and KPIs)
+    # 6. Country Details Section
     # -----------------------------
     if st.session_state.selected_id:
         draw_country_details(df, st.session_state.selected_id, year)
     else:
-        st.info("👆 Select a country using the dropdown or by clicking the map to view detailed KPIs and Charts below.")
+        st.info("👆 Click any country on the map or use the Select Box above to view detailed insights.")
 
     # -----------------------------
     # 7. Country Comparison Section 
@@ -653,7 +661,15 @@ try:
     else:
         st.info("Select 2 or more countries above to view comparative historical trends.")
 
-    st.markdown("---")
+    # -----------------------------
+    # 8. Relocated Comprehensive Snapshot (Final Section)
+    # -----------------------------
+    if FULL_SNAPSHOT_CONTENT:
+        st.markdown("---")
+        # Removed "(For New Users)" from the expander title
+        with st.expander("🔬 View Full Comprehensive Data Snapshot"):
+            st.markdown(FULL_SNAPSHOT_CONTENT, unsafe_allow_html=True)
+        st.markdown("---")
 
 except Exception as e:
     st.title("🆘 Application Failed to Load")
@@ -661,4 +677,4 @@ except Exception as e:
     st.code(f"Error Type: {type(e).__name__}", language='python')
     st.code(f"Error Message: {e}", language='python')
     st.code(traceback.format_exc(), language='python')
-    st.warning("Ensure all data files (`.csv`) and the `requirements.txt` file are present.")
+    st.warning("Ensure all data files (`.csv`) are present and correctly formatted.")
